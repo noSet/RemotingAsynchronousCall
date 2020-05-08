@@ -12,11 +12,11 @@ string name = @delegate.EndInvoke(ar);
 ``` C#
 internal sealed class __TransparentProxy
 {
-	private RealProxy _rp;
-	private object _stubData;
-	private IntPtr _pMT;
-	private IntPtr _pInterfaceMT;
-	private IntPtr _stub;
+    private RealProxy _rp;
+    private object _stubData;
+    private IntPtr _pMT;
+    private IntPtr _pInterfaceMT;
+    private IntPtr _stub;
 }
 ```
 里面有一个`RealProxy`对象，是具体的代理对象
@@ -30,12 +30,12 @@ private void PrivateInvoke(ref MessageData msgData, int type)
 ```C#
 internal struct MessageData
 {
-	internal IntPtr pFrame;
-	internal IntPtr pMethodDesc;
-	internal IntPtr pDelegateMD;
-	internal IntPtr pSig;
-	internal IntPtr thGoverningType;
-	internal int iFlags;
+    internal IntPtr pFrame;
+    internal IntPtr pMethodDesc;
+    internal IntPtr pDelegateMD;
+    internal IntPtr pSig;
+    internal IntPtr thGoverningType;
+    internal int iFlags;
 }
 ```
 这个对象里封装了调用方法的一些信息，我们主要关注`iFlags`这个成员。通过调试知道，同步调用方法时候，也就是`employeeService.GetName(0)`,该成员值为`0`；异步调用时，也就是`@delegate.BeginInvoke(0, default, default)`，该成员值为`1`;`@delegate.EndInvoke(ar)`时，该成员为`2`。
@@ -43,51 +43,51 @@ internal struct MessageData
 ``` C#
 internal virtual IMessage InternalInvoke(IMethodCallMessage reqMcmMsg, bool useDispatchMessage, int callType)
 {
-	Message message = reqMcmMsg as Message;
-	IMessage result = null;
+    Message message = reqMcmMsg as Message;
+    IMessage result = null;
 
     ...忽略其他代码
 
-	switch (callType)
-	{
-	    case 0:
-	    {
-	    	bool bSkippingContextChain = false;
-	    	Context currentContextInternal = currentThread.GetCurrentContextInternal();
-	    	IMessageSink messageSink = identityObject.EnvoyChain;
-	    	if (currentContextInternal.IsDefaultContext && messageSink is EnvoyTerminatorSink)
-	    	{
-	    		bSkippingContextChain = true;
-	    		messageSink = identityObject.ChannelSink;
-	    	}
-	    	result = RemotingProxy.CallProcessMessage(messageSink, reqMcmMsg, identityObject.ProxySideDynamicSinks, currentThread,  currentContextInternal, bSkippingContextChain);
-	    	break;
-	    }
-	    case 1:
-	    case 9:
-	    {
-	    	logicalCallContext = (LogicalCallContext)logicalCallContext.Clone();
-	    	internalMessage.SetCallContext(logicalCallContext);
-	    	AsyncResult asyncResult = new AsyncResult(message);
-	    	this.InternalInvokeAsync(asyncResult, message, useDispatchMessage, callType);
-	    	result = new ReturnMessage(asyncResult, null, 0, null, message);
-	    	break;
-	    }
-	    case 2:
-	    	result = RealProxy.EndInvokeHelper(message, true);
-	    	break;
-	    case 8:
-	    	logicalCallContext = (LogicalCallContext)logicalCallContext.Clone();
-	    	internalMessage.SetCallContext(logicalCallContext);
-	    	this.InternalInvokeAsync(null, message, useDispatchMessage, callType);
-	    	result = new ReturnMessage(null, null, 0, null, reqMcmMsg);
-	    	break;
-	    case 10:
-	    	result = new ReturnMessage(null, null, 0, null, reqMcmMsg);
-	    	break;
-	}
+    switch (callType)
+    {
+        case 0:
+        {
+            bool bSkippingContextChain = false;
+            Context currentContextInternal = currentThread.GetCurrentContextInternal();
+            IMessageSink messageSink = identityObject.EnvoyChain;
+            if (currentContextInternal.IsDefaultContext && messageSink is EnvoyTerminatorSink)
+            {
+                bSkippingContextChain = true;
+                messageSink = identityObject.ChannelSink;
+            }
+            result = RemotingProxy.CallProcessMessage(messageSink, reqMcmMsg, identityObject.ProxySideDynamicSinks, currentThread,  currentContextInternal, bSkippingContextChain);
+            break;
+        }
+        case 1:
+        case 9:
+        {
+            logicalCallContext = (LogicalCallContext)logicalCallContext.Clone();
+            internalMessage.SetCallContext(logicalCallContext);
+            AsyncResult asyncResult = new AsyncResult(message);
+            this.InternalInvokeAsync(asyncResult, message, useDispatchMessage, callType);
+            result = new ReturnMessage(asyncResult, null, 0, null, message);
+            break;
+        }
+        case 2:
+            result = RealProxy.EndInvokeHelper(message, true);
+            break;
+        case 8:
+            logicalCallContext = (LogicalCallContext)logicalCallContext.Clone();
+            internalMessage.SetCallContext(logicalCallContext);
+            this.InternalInvokeAsync(null, message, useDispatchMessage, callType);
+            result = new ReturnMessage(null, null, 0, null, reqMcmMsg);
+            break;
+        case 10:
+            result = new ReturnMessage(null, null, 0, null, reqMcmMsg);
+            break;
+    }
 
-	return result;
+    return result;
 }
 ```
 在`InternalInvokeAsync`方法中，也是和同步调用一样，都有`RealProxy.IdentityObject.EnvoyChain`对象
