@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
+using System.Text;
 using System.Threading.Tasks;
 using AsyncRemoting.Client.ClientChannelSinkProvider;
 using AsyncRemoting.Service;
@@ -23,15 +26,6 @@ namespace AsyncRemoting.Client
             TcpChannel channel = new TcpChannel(hashtable, provider, new BinaryServerFormatterSinkProvider());
             ChannelServices.RegisterChannel(channel, false);
 
-            APM();
-
-            await TPL();
-
-            Console.ReadKey();
-        }
-
-        private static void APM()
-        {
             IEmployeeService employeeService = CreateProxy<IEmployeeService>();
 
             Func<int, string> @delegate = new Func<int, string>(employeeService.GetName);
@@ -43,15 +37,8 @@ namespace AsyncRemoting.Client
             }
 
             Console.WriteLine(@delegate.EndInvoke(ar));
-        }
 
-        private static async Task TPL()
-        {
-            IEmployeeService employeeService = CreateAsyncProxy<IEmployeeService>();
-
-            Task<string> name = employeeService.GetNameAsync(1);
-
-            Console.WriteLine(await name);
+            Console.ReadKey();
         }
 
         private static T CreateProxy<T>(string url = default)
@@ -62,18 +49,6 @@ namespace AsyncRemoting.Client
             }
 
             return (T)Activator.GetObject(typeof(T), url);
-        }
-
-        private static T CreateAsyncProxy<T>(string url = default)
-        {
-            if (string.IsNullOrWhiteSpace(url))
-            {
-                url = "tcp://localhost:8826/" + typeof(T).Name;
-            }
-
-            var employeeService = (T)Activator.GetObject(typeof(T), url);
-
-            return (T)new AsyncRealProxy<T>(employeeService).GetTransparentProxy();
         }
 
         //private static object CreateAsyncProxy<T>(string url = default)
